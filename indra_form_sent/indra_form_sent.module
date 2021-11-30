@@ -26,14 +26,9 @@ function indra_form_sent_menu() {
     'file' => 'include/indra_form_sent.admin.inc',
   );
   $items['admin/content/formsent/filter'] = array(
-    'title' => 'Borrar registros',
+    'title' => t('Delete all records older than a month'),
     'page callback' => 'indra_form_sent_delete_all',
     'page arguments' => array(2),
-    'access arguments' => array('administer nodes'),
-    );
-  $items['admin/content/formsent/form_backup'] = array(
-    'title' => 'Tabla intermedia con los registros de hace más de un mes',
-    'page callback' => 'indra_form_sent_intermediate',
     'access arguments' => array('administer nodes'),
     );
   $items['admin/content/formsent/%/view'] = array(
@@ -146,12 +141,6 @@ function indra_form_sent_form_alter(&$form, &$form_state) {
 
 function indra_last_month(){
 
-  //Fechas en estilo normal
-  /* $date_now = date('d-m-Y');
-  $date_past = strtotime('-60 day', strtotime($date_now));
-  $date_past = date('d-m-Y', $date_past);
-  $first_date = date('d-m-Y', '01-01-1970'); */
-
   //Fechas en estilo UNIX
   $unix_hoy = time(); //UNIX de hoy
 
@@ -163,10 +152,12 @@ function indra_last_month(){
 }
 
 function indra_custom_form_cancel($form, &$form_state) {
-  drupal_goto('admin/content/formsent/form_backup');
+  drupal_goto('admin/content/formsent/');
 }
 
 function indra_form_sent_delete_all(){
+  global $user;
+  $user->uid == 1;
   return drupal_get_form('indra_form_sent_delete_all_form');
 }
 
@@ -187,7 +178,7 @@ function indra_form_sent_delete_all_form($form, &$form_state) {
     '#submit' => array('indra_custom_form_cancel'),
   );
 
-  $form['#redirect'] = 'admin/content/formsent/form_backup';
+  $form['#redirect'] = 'admin/content/formsent';
   return $form;
 }
 
@@ -198,7 +189,7 @@ function indra_form_sent_delete(){
     ->condition('send_date', indra_last_month(), '<')
     ->execute();
 
-  drupal_goto('admin/content/formsent/form_backup');
+  drupal_goto('admin/content/formsent');
 
 }
 
@@ -209,78 +200,6 @@ function indra_form_sent_cron() {
     ->execute();
 
 }
-
-function indra_form_sent_intermediate()
-{
-
-  $rows = array();
-  $field = array('fid', 'identifier', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'body');
-
-  $content = '<a class="btn btn-success" href="' . url('admin/content/formsent/filter') . '">' . t('Delete all') . '</a>';
-  $content .= '<table class="table table-hover table-striped">';
-  $content .= '<tr>';
-  $content .= '<th>' . t('FID') . '</th>';
-  $content .= '<th>' . t('Identifier') . '</th>';
-  $content .= '<th>' . t('Subject') . '</th>';
-  $content .= '<th>' . t('User') . '</th>';
-  $content .= '<th>' . t('Language') . '</th>';
-  $content .= '<th>' . t('Mailto') . '</th>';
-  $content .= '<th>' . t('Replyto') . '</th>';
-  $content .= '<th>' . t('Send_date') . '</th>';
-  $content .= '<th>' . t('IP Address') . '</th>';
-  $content .= '<th>' . t('Options') . '</th>';
-  //$content .= '<th>' . t('Body') . '</th>';
-  $content .= '</tr>';
-
-  $results = db_query('SELECT * FROM {indra_form_sent} where send_date < ' . indra_last_month());
-
-//  $query = db_select('indra_form_sent','as')
-//      ->fields('as',array('fid','identifier','subject'))
-//      ->condition('fid','100', '<')
-//      ->execute();
-//      $results = $query->execute()->fetchAll();
-
- 
-
-foreach ($results as $row) {
-
-  $content .= '<tr>';
-  $content .= '<td>' . $row->fid . '</td>';
-  $content .= '<td>' . $row->identifier . '</td>';
-  $content .= '<td>' . $row->subject . '</td>';
-  $content .= '<td>' . $row->user . '</td>';
-  $content .= '<td>' . $row->language . '</td>';
-  $content .= '<td>' . $row->mailto . '</td>';
-  $content .= '<td>' . $row->replyto . '</td>';
-  $content .= '<td>' . $row->send_date . '</td>';
-  $content .= '<td>' . $row->ip_address . '</td>';
-  //$content .= '<td>' . $row->body . '</td>';
-  $content .= '<td class="btn-toolbar">';
-  $content .= '<a class="btn btn-xs btn-danger" href="' . url('admin/content/formsent/' . $row->fid) . '/delete' . '">' . t('Delete') . '</a>';
-  $content .= '</td>';
-  $content .= '</tr>';
-  
-}
-
-$content .= '</table>';
-
-if(empty($row)){
-  $content = '<h1>No results found</h1>';
-  $content .= '<a class="btn btn-xs btn-danger" href="' . url('admin/content/formsent') . '">' . t('Back') . '</a>';
-}
-
-
-return $content;
-}
-
-
-/* function indra_form_sent_permission(){
-
-  //$role = permissions_create_role('rol_de_pruebas');
-
-  //permissions_grant_all_permissions_by_module('admin', 'indra_form_sent');
-
-} */
 
 function indra_form_sent_permission(){
 

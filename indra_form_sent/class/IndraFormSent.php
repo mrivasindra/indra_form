@@ -20,23 +20,6 @@ class IndraFormSent {
 
   }
 
-  /* public static function deleteAllItems(){
-    $query = db_select('indra_form_sent')
-      ->condition('send_date', $unix_past, '<')
-      ->execute();
-  } */
-
-  public static function deleteItem($fid) {
-    //Fechas en estilo UNIX
-  $unix_hoy = time(); //UNIX de hoy
-  // 1 mes: 2629743 / 2 meses: 5259486 / 3 meses: 7889229
-  $unix_past = $unix_hoy-2629743; //UNIX de hace un mes
-    $num_deleted = db_delete('indra_form_sent')
-      ->condition('fid', $fid)
-      ->execute();
-    return $num_deleted;
-  }
-
   public static function readPager($pager = 10, array $filter = array()) {
     $rows = array();
     $field = array('fid', 'identifier', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'body');
@@ -95,50 +78,6 @@ class IndraFormSent {
     }
     return $rows;
   }
-
-  public static function readLastMonth($filter = array()){
-
-    $rows = array();
-    $field = array('fid', 'identifier', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'body');
-    /*$query = db_select('indra_form_sent', 'fs');
-    $query->fields('fs', $field);
-    if (isset($filter['lastMonth']) && 'all' != $filter['lastMonth']) {
-      $query->condition('send_date', $filter('2018/01/01','2028/12/30'), 'BETWEEN');
-    }*/
-
-
-    $query = db_select('indra_form_sent', 'as')
-      ->fields('as',$field)
-      ->condition('fid', '1', '>')
-      ->execute()
-      ->fetchAssoc();
-
-
-    while ($row = $query->fetchAssoc()) {
-      $row['send_date'] = date('Y-m-d', $row['send_date']);
-      $row['operations'] = l('view', 'admin/content/formsent/filter/' . $row['fid'] . '/view') . ' | ' .
-        l('delete', 'admin/content/formsent/filter/' . $row['fid'] . '/delete');
-      $rows[] = $row;
-    }
-
-
-    return $query;
-  }
-
-  /*
-  public static function readAllMailto() {
-    $query = db_select('indra_form_sent', 's')
-      ->distinct()
-      ->fields('s', array('mailto'));
-    $query->condition('identifier', 'indra_social_indra_social_share_this_form', '<>');
-    $rows['all'] = t('All');
-    foreach ($query->execute()->fetchAll() as $v) {
-      $rows[$v->mailto] = $v->mailto;
-    }
-    return $rows;
-  }
-  */
-
 
   public function create(IndraFormSent $forsent) {
     $nid = db_insert('indra_form_sent')

@@ -72,17 +72,6 @@ function indra_form_sent_filter_form($form, &$form_state) {
       'class' => ['select-filter']
     ],
   );
-  /*
-    $form['mailto'] = array(
-      '#type' => 'select',
-      '#title' => 'Mail to',
-      '#default_value' => 'all',
-      '#options' => IndraFormSent::readAllMailto(),
-      '#attributes' => [
-        'class' => ['select-filter']
-      ],
-    );
-  */
   $form['mailto'] = array(
     '#type' => 'textfield',
     '#title' => 'Mail to',
@@ -117,15 +106,7 @@ function indra_form_sent_filter_form($form, &$form_state) {
     '#value' => t('Download csv'),
     '#submit' => array('indra_form_sent_csv'),
     '#attributes' => array('class' => array('action_botton')),
-  );
-  $form['intermediating'] = [
-    '#type' => 'submit',
-    '#value' => t('Before to 30 days'),
-    '#submit' => array('indra_form_sent_intermediating'),
-    '#attributes' => array('class' => array('action_botton'), 'onclick' => 'indra_form_sent_intermediating(event)'),
-    //'#attributes' => array('class' => array('action_botton')),
-    //'#submit' => array([$this, 'indra_form_sent_last_month']),
-  ];
+   );
 
   return $form;
 }
@@ -208,7 +189,7 @@ function indra_form_sent_delete_submit($form, &$form_state) {
   else {
     drupal_set_message(t('The record @fid has been deleted.', array('@fid' => $form['fid']['#value'])), 'warning');
   }
-  drupal_goto('admin/content/formsent/form_backup');
+  drupal_goto('admin/content/formsent');
 }
 
 /**
@@ -392,46 +373,4 @@ function indra_form_sent_email()
     $info .= $body;
   }
   return $info;
-}
-
-/*function indra_form_sent_last_month(){
-  $table = indra_form_sent_manage_table(INDRA_FORM_SENT_PAGER);
-  echo theme_table($table) . theme('pager');
-  return '<div id="form-sent-ui">' . theme_table($table) . theme('pager') . '</div>';
-
-}*/
-
-function indra_form_sent_last_month($form_state, $form){
-
-  echo "holaa";
-  $table = indra_form_sent_manage_table(INDRA_FORM_SENT_PAGER);
-  echo theme_table($table) . theme('pager');
-  '<div id="form-sent-ui">' . theme_table($table) . theme('pager') . '</div>';
-
-  $rows = array();
-  $field = array('fid', 'identifier', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'body');
-
-  //$query->condition('send_date', $filter('2018/01/01','2028/12/30'), 'BETWEEN');
-  $query = db_select('indra_form_sent', 'as')
-    ->fields('as',$field)
-    ->condition('fid', 1, '=')
-    ->execute();
-    //->fetchAssoc();
-
-  $result = $query;
-  while ($row = $result->fetchAssoc()) {
-    $row['send_date'] = date('Y-m-d', $row['send_date']);
-    $row['operations'] = l('view', 'admin/content/formsent/filter' . $row['fid'] . '/view') . ' | ' .
-      l('delete', 'admin/content/formsent/filter' . $row['fid'] . '/delete');
-    $rows[] = $row;
-  }
-
-  return $rows;
-
-}
-
-function indra_form_sent_intermediating(){
-
-  drupal_goto('admin/content/formsent/form_backup');
-
 }
