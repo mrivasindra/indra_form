@@ -1,0 +1,292 @@
+<?php
+
+/**
+ * Implementa hook_init().
+ */
+function indra_form_sent_init() {
+  $path = drupal_get_path('module', 'indra_form_sent');
+  spl_autoload_register(function ($class) use($path) {
+    $file = $path . '/class/' . $class . '.php';
+    if (file_exists($file)) {
+      require_once $file;
+    }
+  });
+}
+
+/**
+ * Implementa hook_menu().
+ */
+function indra_form_sent_menu() {
+  $items['admin/content/formsent'] = array(
+    'title' => 'Form sent',
+    'page callback' => 'indra_form_sent_manage',
+    'access arguments' => array('administer nodes'),
+    'file' => 'include/indra_form_sent.admin.inc',
+  );
+  $items['admin/content/formsent/filter'] = array(
+    'title' => 'Borrar registros',
+    'page callback' => 'indra_form_sent_delete_all',
+    'page arguments' => array(2),
+    'access arguments' => array('administer nodes'),
+    );
+  $items['admin/content/formsent/form_backup'] = array(
+    'title' => 'Tabla intermedia con los registros de hace más de un mes',
+    'page callback' => 'indra_form_sent_intermediate',
+    'access arguments' => array('administer nodes'),
+    );
+  $items['admin/content/formsent/%/view'] = array(
+    'title' => 'Email sent',
+    'page callback' => 'indra_form_sent_item_view',
+    'page arguments' => array(3),
+    'access arguments' => array('administer nodes'),
+    'file' => 'include/indra_form_sent.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/content/formsent/%/delete'] = array(
+    'title' => 'Delete Record',
+    'page callback' => 'indra_form_sent_item_delete',
+    'page arguments' => array(3),
+    'access arguments' => array('administer nodes'),
+    'file' => 'include/indra_form_sent.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/content/formsent/table/ajax'] = array(
+    'page callback' => 'indra_form_sent_manage_ajax',
+    'access arguments' => array('administer nodes'),
+    'file' => 'include/indra_form_sent.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/config/system/form-sent'] = array(
+    'title' => 'Form sent',
+    'description' => t('Registration of forms submission.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('indra_form_sent_configuration'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'include/indra_form_sent.admin.inc',
+  );
+  $items['mail-csv'] = array(
+    'page callback' => 'indra_form_sent_email',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'include/indra_form_sent.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implementa hook_theme()
+ */
+function indra_form_sent_theme() {
+  $module_path = drupal_get_path('module', 'indra_form_sent');
+  $themes = array(
+    'indra_form_sent_mail' => array(
+      'template' => 'indra-form-sent-mail',
+      'variables' => array('data' => NULL),
+      'path' => $module_path . '/tpl',
+    ),
+  );
+  return $themes;
+}
+
+/**
+ * Implementa hook_mail()
+ */
+function indra_form_sent_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'mail_csv':
+      $message['subject'] = $params['subject'];
+      $message['body'][] = $params['body'];
+      break;
+  }
+}
+
+/**
+ * Implementa hook_form_alter();
+ */
+function indra_form_sent_form_alter(&$form, &$form_state) {
+  if (!in_array($form['#form_id'], preg_split('/\r\n|\r|\n/', variable_get('indra_form_sent_id', '')))) {
+    return;
+  }
+  global $language;
+  $form_temp = array();
+  $nid_value = isset($form['nid_policy']['#value']) ? $form['nid_policy']['#value'] : variable_get('indra_form_sent_data_policy', '');
+  $privacity = module_exists('translation') ? translation_path_get_translations('node/' . $nid_value, '') : '/node/' . $nid_value;
+  $insert = true;
+  foreach ($form as $k => $value) {
+    if ($insert && is_array($value) && isset($value['#type']) && ('submit' == $value['#type'] || 'actions' == $value['#type'])) {
+      $tlanguage = isset($privacity[$language->language]) ? drupal_get_path_alias($privacity[$language->language], $language->language)  : $privacity;
+      $description = t(variable_get('indra_form_sent_first_layer', '')) . ' ' . t('<a href="@url" class="privacity-link" target="_blank">Click here</a> for more information.',['@url'=> url($tlanguage)]);
+      $form_temp['accept_policy'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('I ACCEPT the processing of my personal data.'),
+        '#required' => TRUE,
+      );
+      if (!isset($form['no_policy_more']['#value'])) {
+        $form_temp['accept_policy_more'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('I AGREE to transfer my data to Indra group companies.'),
+          '#required' => TRUE,
+          '#description' => $description,
+        );
+      }
+      else {
+        $form_temp['accept_policy']['#description'] = $description;
+      }
+      $form_temp[$k] = $value;
+      $insert = false;
+    }
+    else {
+      $form_temp[$k] = $value;
+    }
+  }
+  $form = $form_temp;
+}
+
+function indra_last_month(){
+
+  //Fechas en estilo normal
+  /* $date_now = date('d-m-Y');
+  $date_past = strtotime('-60 day', strtotime($date_now));
+  $date_past = date('d-m-Y', $date_past);
+  $first_date = date('d-m-Y', '01-01-1970'); */
+
+  //Fechas en estilo UNIX
+  $unix_hoy = time(); //UNIX de hoy
+
+  // 1 mes: 2629743 / 2 meses: 5259486 / 3 meses: 7889229
+  $unix_past = $unix_hoy-2629743; //UNIX de hace un mes
+
+  return $unix_past;
+
+}
+
+function indra_custom_form_cancel($form, &$form_state) {
+  drupal_goto('admin/content/formsent/form_backup');
+}
+
+function indra_form_sent_delete_all(){
+  return drupal_get_form('indra_form_sent_delete_all_form');
+}
+
+function indra_form_sent_delete_all_form($form, &$form_state) {
+  $form['information'] = array(
+    '#markup' => t('Are you sure you want to delete all? </br>'),
+  );
+ 
+  $form['delete'] = array(
+    '#type' => 'submit',
+    '#value' => t('Delete'),
+    '#submit' => array('indra_form_sent_delete'),
+    '#attributes' => array('class' => array('action_botton')),
+  );
+  $form['cancel'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cancel'),
+    '#submit' => array('indra_custom_form_cancel'),
+  );
+
+  $form['#redirect'] = 'admin/content/formsent/form_backup';
+  return $form;
+}
+
+function indra_form_sent_delete(){
+
+  //Hay que borrar datos entre: El principio y el (tiempo actual - 2 meses)
+  db_delete('indra_form_sent')
+    ->condition('send_date', indra_last_month(), '<')
+    ->execute();
+
+  drupal_goto('admin/content/formsent/form_backup');
+
+}
+
+function indra_form_sent_cron() {
+
+  db_delete('indra_form_sent')
+    ->condition('send_date', indra_last_month(), '<')
+    ->execute();
+
+}
+
+function indra_form_sent_intermediate()
+{
+
+  $rows = array();
+  $field = array('fid', 'identifier', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'body');
+
+  $content = '<a class="btn btn-success" href="' . url('admin/content/formsent/filter') . '">' . t('Delete all') . '</a>';
+  $content .= '<table class="table table-hover table-striped">';
+  $content .= '<tr>';
+  $content .= '<th>' . t('FID') . '</th>';
+  $content .= '<th>' . t('Identifier') . '</th>';
+  $content .= '<th>' . t('Subject') . '</th>';
+  $content .= '<th>' . t('User') . '</th>';
+  $content .= '<th>' . t('Language') . '</th>';
+  $content .= '<th>' . t('Mailto') . '</th>';
+  $content .= '<th>' . t('Replyto') . '</th>';
+  $content .= '<th>' . t('Send_date') . '</th>';
+  $content .= '<th>' . t('IP Address') . '</th>';
+  $content .= '<th>' . t('Options') . '</th>';
+  //$content .= '<th>' . t('Body') . '</th>';
+  $content .= '</tr>';
+
+  $results = db_query('SELECT * FROM {indra_form_sent} where send_date < ' . indra_last_month());
+
+//  $query = db_select('indra_form_sent','as')
+//      ->fields('as',array('fid','identifier','subject'))
+//      ->condition('fid','100', '<')
+//      ->execute();
+//      $results = $query->execute()->fetchAll();
+
+ 
+
+foreach ($results as $row) {
+
+  $content .= '<tr>';
+  $content .= '<td>' . $row->fid . '</td>';
+  $content .= '<td>' . $row->identifier . '</td>';
+  $content .= '<td>' . $row->subject . '</td>';
+  $content .= '<td>' . $row->user . '</td>';
+  $content .= '<td>' . $row->language . '</td>';
+  $content .= '<td>' . $row->mailto . '</td>';
+  $content .= '<td>' . $row->replyto . '</td>';
+  $content .= '<td>' . $row->send_date . '</td>';
+  $content .= '<td>' . $row->ip_address . '</td>';
+  //$content .= '<td>' . $row->body . '</td>';
+  $content .= '<td class="btn-toolbar">';
+  $content .= '<a class="btn btn-xs btn-danger" href="' . url('admin/content/formsent/' . $row->fid) . '/delete' . '">' . t('Delete') . '</a>';
+  $content .= '</td>';
+  $content .= '</tr>';
+  
+}
+
+$content .= '</table>';
+
+if(empty($row)){
+  $content = '<h1>No results found</h1>';
+  $content .= '<a class="btn btn-xs btn-danger" href="' . url('admin/content/formsent') . '">' . t('Back') . '</a>';
+}
+
+
+return $content;
+}
+
+
+/* function indra_form_sent_permission(){
+
+  //$role = permissions_create_role('rol_de_pruebas');
+
+  //permissions_grant_all_permissions_by_module('admin', 'indra_form_sent');
+
+} */
+
+function indra_form_sent_permission(){
+
+  return array(
+    'administer my module' => array(
+      'title' => t('Administer my module'),
+      'description' => t('Perform administration tasks for my module.'),
+    ),
+  ); 
+
+}
