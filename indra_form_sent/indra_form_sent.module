@@ -152,12 +152,13 @@ function indra_last_month(){
 }
 
 function indra_custom_form_cancel($form, &$form_state) {
-  drupal_goto('admin/content/formsent/');
+  drupal_goto('admin/content/formsent');
 }
 
 function indra_form_sent_delete_all(){
-  global $user;
-  $user->uid == 1;
+  /* global $user;
+  $user->uid == 1; 
+   */
   return drupal_get_form('indra_form_sent_delete_all_form');
 }
 
