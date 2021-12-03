@@ -15,9 +15,9 @@ class IndraFormSent {
 
   public static function readItem($fid) {
     $query = db_select('indra_form_sent', 's')
-      ->fields('s')
-      ->condition('s.fid', $fid, '=');
-
+        ->fields('s')
+        ->condition('s.fid', $fid, '=');
+    return $query->execute()->fetchAssoc();
   }
 
   public static function readPager($pager = 10, array $filter = array()) {
@@ -143,5 +143,5 @@ class IndraFormSent {
   public function setBody($body) {
     $this->body = substr($body, 0, 5000);
   }
-
+  
 }

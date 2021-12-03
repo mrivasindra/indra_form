@@ -189,7 +189,7 @@ function indra_form_sent_delete_submit($form, &$form_state) {
   else {
     drupal_set_message(t('The record @fid has been deleted.', array('@fid' => $form['fid']['#value'])), 'warning');
   }
-  drupal_goto('admin/content/formsent');
+  indra_form_sent_redirect_main_page();
 }
 
 /**
@@ -230,7 +230,6 @@ function indra_form_sent_filter() {
     'replyto' => isset($_POST['replyto']) ? $_POST['replyto'] : null,
     'date_from' => null,
     'date_to' => null,
-    'send_date' => isset($_POST['send_date']) ? $_POST['send_date'] : null,
   );
 
   if (isset($_POST['date_from'])) {
