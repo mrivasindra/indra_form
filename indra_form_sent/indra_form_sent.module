@@ -29,7 +29,8 @@ function indra_form_sent_menu() {
     'title' => t('Delete all records older than a month'),
     'page callback' => 'indra_form_sent_delete_all',
     'page arguments' => array(2),
-    'access arguments' => array('administer nodes'),
+    //'access arguments' => array('administer nodes'),
+    'access arguments' => array('admin'),  
     );
   $items['admin/content/formsent/%/view'] = array(
     'title' => 'Email sent',
