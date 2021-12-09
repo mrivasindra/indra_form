@@ -204,7 +204,7 @@ function indra_form_sent_delete(){
 }
 
 /*
-* Si ejecutas el cron se borran los registros que lleven más de un mes
+* Implementa hook_cron()
 */
 
 function indra_form_sent_cron() {
@@ -213,4 +213,10 @@ function indra_form_sent_cron() {
     ->condition('send_date', indra_last_month(), '<')
     ->execute();
 
+    $last_notificacion = variable_get('indra_form_sent', 0);
+
+  if($last_notificacion < strtotime('-6 month')){
+    indra_form_sent_cron();
+
+  }
 }
