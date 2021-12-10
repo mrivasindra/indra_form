@@ -148,8 +148,8 @@ function indra_last_month(){
   //Fechas en estilo UNIX
   $unix_hoy = time(); //UNIX de hoy
 
-  // 1 mes: 2629743 / 2 meses: 5259486 / 3 meses: 7889229
-  $unix_past = $unix_hoy-2629743; //UNIX de hace un mes
+  // 1 mes: 2629743 / 2 meses: 5259486 / 3 meses: 7889229 / 6 meses: 15778458 
+  $unix_past = $unix_hoy-15778458; //UNIX de hace 6 meses
 
   return $unix_past;
 
@@ -194,7 +194,6 @@ function indra_form_sent_delete_all_form($form, &$form_state) {
 
 function indra_form_sent_delete(){
 
-  //Hay que borrar datos entre: El principio y el (tiempo actual - 2 meses)
   db_delete('indra_form_sent')
     ->condition('send_date', indra_last_month(), '<')
     ->execute();
@@ -213,10 +212,4 @@ function indra_form_sent_cron() {
     ->condition('send_date', indra_last_month(), '<')
     ->execute();
 
-    $last_notificacion = variable_get('indra_form_sent', 0);
-
-  if($last_notificacion < strtotime('-6 month')){
-    indra_form_sent_cron();
-
-  }
 }
