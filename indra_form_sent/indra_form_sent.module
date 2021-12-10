@@ -25,11 +25,13 @@ function indra_form_sent_menu() {
     'access arguments' => array('administer nodes'),
     'file' => 'include/indra_form_sent.admin.inc',
   );
-  $items['admin/content/formsent/filter'] = array(
+  $items['admin/config/system/form-sent/filter'] = array(
     'title' => t('Delete all records older than a month'),
-    'page callback' => 'indra_form_sent_delete_all',
-    'page arguments' => array(2),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('indra_form_sent_delete_all'),
+    'file' => 'include/indra_form_sent.admin.inc',
     'access arguments' => array('admin'),  
+    //'access arguments' => array('administer site configuration'),
     );
   $items['admin/content/formsent/%/view'] = array(
     'title' => 'Email sent',
@@ -140,76 +142,11 @@ function indra_form_sent_form_alter(&$form, &$form_state) {
 }
 
 /*
-* Función para retornar hace un mes, se pueden cambiar los valores a 2 o 3 meses
-*/
-
-function indra_last_month(){
-
-  //Fechas en estilo UNIX
-  $unix_hoy = time(); //UNIX de hoy
-
-  // 1 mes: 2629743 / 2 meses: 5259486 / 3 meses: 7889229 / 6 meses: 15778458 
-  $unix_past = $unix_hoy-15778458; //UNIX de hace 6 meses
-
-  return $unix_past;
-
-}
-
-function indra_custom_form_cancel($form, &$form_state) {
-  drupal_goto('admin/content/formsent');
-}
-
-function indra_form_sent_delete_all(){
-  return drupal_get_form('indra_form_sent_delete_all_form');
-}
-
-/*
-* Formulario para borrar todos los elementos
-*/
-
-function indra_form_sent_delete_all_form($form, &$form_state) {
-  $form['information'] = array(
-    '#markup' => t('Are you sure you want to delete all? </br>'),
-  );
- 
-  $form['delete'] = array(
-    '#type' => 'submit',
-    '#value' => t('Delete'),
-    '#submit' => array('indra_form_sent_delete'),
-    '#attributes' => array('class' => array('action_botton')),
-  );
-  $form['cancel'] = array(
-    '#type' => 'submit',
-    '#value' => t('Cancel'),
-    '#submit' => array('indra_custom_form_cancel'),
-  );
-
-  $form['#redirect'] = 'admin/content/formsent';
-  return $form;
-}
-
-/*
-* Para borrar los elementos de la tabla que lleven más de un mes.
-*/
-
-function indra_form_sent_delete(){
-
-  db_delete('indra_form_sent')
-    ->condition('send_date', indra_last_month(), '<')
-    ->execute();
-
-  drupal_goto('admin/content/formsent');
-
-}
-
-/*
 * Implementa hook_cron()
 */
 
 function indra_form_sent_cron() {
 
-  db_delete('indra_form_sent')
-    ->condition('send_date', indra_last_month(), '<')
-    ->execute();
+  IndraFormSent::deleteAllItems();
 
 }

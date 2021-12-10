@@ -68,6 +68,20 @@ class IndraFormSent {
     return $num_deleted;
   }
 
+  public static function deleteAllItems(){
+
+  //Fechas en estilo UNIX
+  $unix_hoy = time(); //UNIX de hoy
+
+  // 1 mes: 2629743 / 2 meses: 5259486 / 3 meses: 7889229 / 6 meses: 15778458 
+  $unix_past = $unix_hoy-15778458; //UNIX de hace 6 meses
+    
+    db_delete('indra_form_sent')
+    ->condition('send_date', $unix_past, '<')
+    ->execute();
+
+  }
+
   public static function readAllIdentifier() {
     $query = db_select('indra_form_sent', 's')
       ->distinct()

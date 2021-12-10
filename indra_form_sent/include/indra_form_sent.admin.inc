@@ -373,3 +373,50 @@ function indra_form_sent_email()
   }
   return $info;
 }
+
+/**
+ * Cargar el formulario para barrar item desde la uri "admin/content/formsent/%/delete"
+ * @param int $fid
+ * @return array renderizable
+ */
+
+function indra_form_sent_delete_all(){
+  return drupal_get_form('indra_form_sent_delete_all_form');
+}
+
+/*
+* Formulario para borrar todos los elementos
+*/
+function indra_form_sent_delete_all_form($form, &$form_state) {
+
+  $form['information'] = array(
+    '#markup' => t('Are you sure you want to delete all? </br>'),
+  );
+ 
+  $form['delete'] = array(
+    '#type' => 'submit',
+    '#value' => t('Delete'),
+    '#submit' => array('indra_form_sent_delete'),
+    '#attributes' => array('class' => array('action_botton')),
+  );
+  $form['cancel'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cancel'),
+    '#submit' => array('indra_custom_form_cancel'),
+  );
+
+  $form['#redirect'] = 'admin/content/formsent';
+  return $form;
+}
+
+function indra_custom_form_cancel($form, &$form_state) {
+  drupal_goto('admin/content/formsent');
+}
+
+function indra_form_sent_delete(){
+
+  IndraFormSent::deleteAllItems();
+
+  drupal_goto('admin/content/formsent');
+
+}
