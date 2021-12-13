@@ -77,7 +77,7 @@ class IndraFormSent {
   $unix_past = $unix_hoy-15778458; //UNIX de hace 6 meses
     
     db_delete('indra_form_sent')
-    ->condition('send_date', $unix_past, '<')
+    ->condition('send_date', $unix_pasts, '<')
     ->execute();
 
   }
