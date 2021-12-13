@@ -99,3 +99,4 @@ function indra_form_sent_update_7001() {
   $mail_sys['indra_form_sent'] = 'IndraMailSystem';
   variable_set('mail_system', $mail_sys);
 }
+

@@ -26,11 +26,11 @@ function indra_form_sent_menu() {
     'file' => 'include/indra_form_sent.admin.inc',
   );
   $items['admin/config/system/form-sent/filter'] = array(
-    'title' => t('Delete all records older than a month'),
+    'title' => t('Delete all records'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('indra_form_sent_delete_all'),
     'file' => 'include/indra_form_sent.admin.inc',
-    'access arguments' => array('admin'),  
+    'access arguments' => array('administer my module'),  
     //'access arguments' => array('administer site configuration'),
     );
   $items['admin/content/formsent/%/view'] = array(
