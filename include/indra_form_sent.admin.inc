@@ -1,6 +1,6 @@
 <?php
 
-define('INDRA_FORM_SENT_PAGER', 100);
+define('INDRA_FORM_SENT_PAGER', 30);
 
 /**
  * Retorno para el menú "admin/content/formsent"
@@ -30,28 +30,20 @@ function indra_form_sent_manage_ajax() {
  * @return array  renderizable para tabla.
  */
 function indra_form_sent_manage_table($pager = 10, $filter = array()) {
-
   $data = IndraFormSent::readPager($pager, $filter);
+  foreach ($data as $key => $value) {
+    unset($data[$key]['body']);
+  }
 
-      $currentDate = time();
-      $fechaMenosTreina = $currentDate-2629743;
-      $table = array();
-
-      //if($pager['send_date']>$fechaMenosTreina && $pager['send_date']<$currentDate) {
-        foreach ($data as $key => $value) {
-          unset($data[$key]['body']);
-        }
-
-        $table = array(
-          'header' => array('fid', 'identifier', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'operations', ''),
-          'rows' => $data,
-          'attributes' => array('id' => 'form-sent-table'),
-          'caption' => '',
-          'colgroups' => array(),
-          'sticky' => '',
-          'empty' => '',
-        );
-      //}
+  $table = array(
+    'header' => array('fid', 'identifier', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'operations'),
+    'rows' => $data,
+    'attributes' => array('id' => 'form-sent-table'),
+    'caption' => '',
+    'colgroups' => array(),
+    'sticky' => '',
+    'empty' => '',
+  );
   return $table;
 }
 
@@ -80,17 +72,6 @@ function indra_form_sent_filter_form($form, &$form_state) {
       'class' => ['select-filter']
     ],
   );
-/*
-  $form['mailto'] = array(
-    '#type' => 'select',
-    '#title' => 'Mail to',
-    '#default_value' => 'all',
-    '#options' => IndraFormSent::readAllMailto(),
-    '#attributes' => [
-      'class' => ['select-filter']
-    ],
-  );
-*/
   $form['mailto'] = array(
     '#type' => 'textfield',
     '#title' => 'Mail to',
@@ -100,12 +81,6 @@ function indra_form_sent_filter_form($form, &$form_state) {
     '#title' => 'Reply to',
 //    '#maxlength' => 30,
 //    '#size' => 20,
-  );
-  $form['treinta'] = array(
-    '#type' => 'date_popup',
-    '#title' => '30 Dias',
-    '#options' => IndraFormSent::readLastMonth(),
-    //'#attributes' => array('class' => array('action_botton'), 'onclick' => 'indra_form_sent_form_callback(event)'),
   );
   $form['date_from'] = array(
     '#type' => 'date_popup',
@@ -131,7 +106,7 @@ function indra_form_sent_filter_form($form, &$form_state) {
     '#value' => t('Download csv'),
     '#submit' => array('indra_form_sent_csv'),
     '#attributes' => array('class' => array('action_botton')),
-  );
+   );
 
   return $form;
 }
@@ -141,6 +116,7 @@ function indra_form_sent_filter_form($form, &$form_state) {
  * @param int $fid
  * @return array renderizable
  */
+
 function indra_form_sent_item_delete($fid) {
   return drupal_get_form('indra_form_sent_delete_form', $fid);
 }
@@ -171,6 +147,7 @@ function indra_form_sent_delete_form($form, &$form_state, $fid) {
     '#submit' => array('indra_form_sent_redirect_main_page'),
     '#attributes' => array('class' => array('action_botton')),
   );
+
   $form['#redirect'] = 'admin/content/formsent';
   return $form;
 }
@@ -184,7 +161,6 @@ function indra_form_sent_delete_ajax() {
     'subject' => isset($_POST['subject']) ? $_POST['subject'] : null,
     'mailto' => isset($_POST['mailto']) ? $_POST['mailto'] : null,
     'replyto' => isset($_POST['replyto']) ? $_POST['replyto'] : null,
-    'send_date' => isset($_POST['send_date']) ? $_POST['send_date'] : null,
   );
 
   $table = indra_form_sent_manage_table(INDRA_FORM_SENT_PAGER, $filter);
@@ -242,38 +218,6 @@ function indra_form_sent_csv() {
   exit;
 }
 
-function indra_form_sent_ultimos_dias($form, $formstate){
-
-  $filter = array(
-    'identifier' => isset($_POST['identifier']) ? $_POST['identifier'] : null,
-    'subject' => isset($_POST['subject']) ? $_POST['subject'] : null,
-    'mailto' => isset($_POST['mailto']) ? $_POST['mailto'] : null,
-    'replyto' => isset($_POST['replyto']) ? $_POST['replyto'] : null,
-    'date_from' => null,
-    'date_to' => null,
-  );
-
-  $fechaActual = time();
-  $fechaMenosTreinta = $fechaActual-2629743;
-
-  if(isset($_POST['treinta'])){
-    $filter['send_date'] = IndraFormSent::readLastMonth();
-  }
-
-  /*if($_POST['send_date']>$fechaMenosTreinta && $_POST['send_date']<$fechaActual){
-
-    $rows['all'] = t('All');
-    $query = db_select('indra_form_sent', 'as')
-    ->condition('send_date', [$fechaMenosTreinta, $fechaActual], 'BETWEEN');
-    foreach ($query->execute()->fetchAll() as $v){
-      $filter->$v;
-    }
-
-  }*/
-  return $filter;
-
-}
-
 /**
  * Recoge los filtros desde GUI
  * @return array
@@ -286,7 +230,6 @@ function indra_form_sent_filter() {
     'replyto' => isset($_POST['replyto']) ? $_POST['replyto'] : null,
     'date_from' => null,
     'date_to' => null,
-    'send_date' => null,
   );
 
   if (isset($_POST['date_from'])) {
@@ -302,67 +245,6 @@ function indra_form_sent_filter() {
     $date_to = DateTime::createFromFormat('Y-m-d', $_POST['date_to']['date']);
     $filter['date_to'] = $date_to ? $date_to->modify('+1 day')->getTimestamp() : null;
   }
-
-  $currentDate = strtotime(date("d-m-Y H:i:00",time()));
-  $fechaEntrada = strtotime("19-10-2021 21:00:00");
-
-  $tiempoDeLaCajitaTreinta = $_POST['treinta']['date'];
-  $tiempoDeLaCajitaTreintaEnSegundos = strtotime($_POST['treinta']['date']);
-  $tiempoEnUnix = strtotime($_POST['treinta']['date']);
-  $fechaMasUnMes = strtotime("-1 month");
-  $dateHoy = time();
-  $dateHaceUnMes = $dateHoy-2629743;
-
-  echo "<br>Aquí imprimo el array: " . $_POST['treinta'];
-  echo "<br>Aquí imprimo el strtotime variable: " . strtotime($tiempoEnUnix);
-  echo "<br>Aquí imprimo las fechas: dateHoy: " . $dateHoy . ". fechaMasUnMes: " . $fechaMasUnMes . "<br>";
-  echo "<br>Comparar entre hace un mes y hoy: " . strtotime($fechaMasUnMes,$currentDate);
-
-  if (isset($_POST['treinta']) != null){
-
-    echo "adios mundo cruel";
-
-    $tiempoEnUnix = strtotime($_POST['treinta']['date']);
-    $fechaMasUnMes = strtotime("-1 month");
-    foreach($_POST['treinta'] as $c=>$v){
-      echo "<br>Aquí recorro el array:" . $c . " -> " . $v;
-    }
-
-    $tiempoDeLaCajitaTreinta = $_POST['treinta']['date'];
-    $tiempoDeLaCajitaTreintaEnSegundos = strtotime($_POST['treinta']['date']);
-
-    echo "<br>Aquí imprimo el array: " . $_POST['treinta'];
-    echo "<br>Aquí imprimo el strtotime variable: " . strtotime($tiempoEnUnix);
-    echo "<br>Aquí imprimo las fechas: dateHoy: " . $dateHoy . ". fechaMasUnMes: " . $fechaMasUnMes . "<br>";
-    echo "<br>Comparar entre hace un mes y hoy: " . strtotime($fechaMasUnMes,$currentDate);
-
-    echo "<br>En la variable de treinta tenemos: " . $tiempoDeLaCajitaTreinta . "<br>";
-    echo "<br>En la variable de treinta segundos tenemos: " . $tiempoDeLaCajitaTreintaEnSegundos . "<br>";
-    echo "<br>En la variable dateHaceUnMes tengo: " . $dateHaceUnMes . "<br>";
-
-    //Suponiendo que todo el tiempo está en unix lo que hay que comparar es:
-    //Variable 1: La variable del $_POST['treinta'] = datoIntroducido:
-    //Variable 2: La variable de HACE UN MES = haceUnMes
-    //Variable 3: La variable de AHORA MISMO = ahoraMismo
-    //datoIntroducido>haceUnMes && datoIntroducido<ahoraMismo
-    echo date('d/m/Y', 1258447881);
-    //$tiempoDeLaCajitaTreinta>
-    if($tiempoDeLaCajitaTreintaEnSegundos>$dateHaceUnMes && $tiempoDeLaCajitaTreintaEnSegundos<$currentDate){
-        echo "<br>La fecha es de hace menos de un mes<br>";
-    }else{
-      echo "<br>La fecha es de hace más de un mes<br>";
-    }
-
-    /*if($_POST['treinta']>$tiempoMenosTreinta && $_POST['treinta']<$currentDate){
-        echo "PA";
-    }else{
-        echo "<br>NM";
-    }*/
-
-  }else{
-    echo "Hola mundo";
-  }
-
   return $filter;
 }
 
@@ -436,7 +318,8 @@ function indra_form_sent_scv_data(array $filter) {
 /**
  * Envía csv por email.
  */
-function indra_form_sent_email() {
+function indra_form_sent_email()
+{
   global $language;
   $language->language = 'es';
 
@@ -449,9 +332,9 @@ function indra_form_sent_email() {
   );
 
   $body = t('Se adjunta fichero csv con los datos de los formularios enviados desde @from hasta @to', array(
-    '@from' => date('m-d-Y', $filter['date_from']),
-    '@to' => date('m-d-Y', $filter['date_to']),
-      )
+      '@from' => date('m-d-Y', $filter['date_from']),
+      '@to' => date('m-d-Y', $filter['date_to']),
+    )
   );
 
   if (!$to = variable_get('indra_form_sent_mail')) {
@@ -484,12 +367,56 @@ function indra_form_sent_email() {
   $message = drupal_mail('indra_form_sent', 'mail_csv', $to, $language, $params);
   if (!$message['result']) {
     $info .= t('ERROR al enviar el e-mail (from %from to %to).', array('%from' => $message['from'], '%to' => $message['to'])) . '<br />' . PHP_EOL;
-  }
-  else {
+  } else {
     $info .= t('El e-mail se ha enviado (desde %from a %to).', array('%from' => $message['from'], '%to' => $message['to'])) . '<br />' . PHP_EOL;
     $info .= $body;
   }
-
-
   return $info;
+}
+
+/**
+ * Cargar el formulario para barrar item desde la uri "admin/content/formsent/%/delete"
+ * @param int $fid
+ * @return array renderizable
+ */
+
+function indra_form_sent_delete_all(){
+  return drupal_get_form('indra_form_sent_delete_all_form');
+}
+
+/*
+* Formulario para borrar todos los elementos
+*/
+function indra_form_sent_delete_all_form($form, &$form_state) {
+
+  $form['information'] = array(
+    '#markup' => t('Are you sure you want to delete all? </br>'),
+  );
+ 
+  $form['delete'] = array(
+    '#type' => 'submit',
+    '#value' => t('Delete'),
+    '#submit' => array('indra_form_sent_delete'),
+    '#attributes' => array('class' => array('action_botton')),
+  );
+  $form['cancel'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cancel'),
+    '#submit' => array('indra_custom_form_cancel'),
+  );
+
+  $form['#redirect'] = 'admin/content/formsent';
+  return $form;
+}
+
+function indra_custom_form_cancel($form, &$form_state) {
+  drupal_goto('admin/content/formsent');
+}
+
+function indra_form_sent_delete(){
+
+  IndraFormSent::deleteAllItems();
+
+  drupal_goto('admin/content/formsent');
+
 }

@@ -1,5 +1,7 @@
 <?php
 
+// INDRA FORM SIN TABLA
+
 /**
  * Implementa hook_init().
  */
@@ -23,6 +25,14 @@ function indra_form_sent_menu() {
     'access arguments' => array('administer nodes'),
     'file' => 'include/indra_form_sent.admin.inc',
   );
+  $items['admin/config/system/form-sent/filter'] = array(
+    'title' => t('Delete all records older than a month'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('indra_form_sent_delete_all'),
+    'file' => 'include/indra_form_sent.admin.inc',
+    'access arguments' => array('admin'),  
+    //'access arguments' => array('administer site configuration'),
+    );
   $items['admin/content/formsent/%/view'] = array(
     'title' => 'Email sent',
     'page callback' => 'indra_form_sent_item_view',
@@ -131,5 +141,27 @@ function indra_form_sent_form_alter(&$form, &$form_state) {
   $form = $form_temp;
 }
 
+/*
+* Implementa hook_cron()
+*/
 
-//asdfasdf
+function indra_form_sent_cron() {
+
+  IndraFormSent::deleteAllItems();
+
+}
+
+/*
+* Implementa el hook_permissions()
+*/
+
+function indra_form_sent_permission(){
+
+  return array(
+    'administer my module' => array(
+      'title' => t('Administer my module'),
+      'description' => t('Perform administration tasks for my module.'),
+    ),
+  ); 
+
+}

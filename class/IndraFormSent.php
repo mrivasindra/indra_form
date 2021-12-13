@@ -20,19 +20,7 @@ class IndraFormSent {
     return $query->execute()->fetchAssoc();
   }
 
-  public static function deleteItem($fid) {
-    $num_deleted = db_delete('indra_form_sent')
-        ->condition('fid', $fid)
-        ->execute();
-    return $num_deleted;
-  }
-
-  public static function readPager($pager = 10, array $filter = array())
-  {
-    $currentDate = time();
-    $fechaMenosTreinta = $currentDate-2629743;
-    echo "Hola ---- ";
-    echo "$fechaMenosTreinta ----- $currentDate";
+  public static function readPager($pager = 10, array $filter = array()) {
     $rows = array();
     $field = array('fid', 'identifier', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'body');
     $query = db_select('indra_form_sent', 'fs');
@@ -55,55 +43,49 @@ class IndraFormSent {
     if (isset($filter['date_to']) && null !== $filter['date_to']) {
       $query->condition('send_date', $filter['date_to'], '<=');
     }
-    if(isset($filter['send_date']) && !empty($filter['send_date'])) {
-      $query->condition('send_date',[$currentDate,$fechaMenosTreinta], 'BETWEEN');
-  }
-    if(isset($form['treinta'])){
-      echo "hihi";
-      $query->condition('send_date',[$fechaMenosTreinta,$currentDate],'BETWEEN');
-    }
-    /*$currentDate = time();
-    $dates = $currentDate - 2629743;
-    if (isset($filter['send_date']) > $dates ) {
-      $query->condition('send_date',$filter['send_date'], '>');
-    }*/
     $result = $query
       ->extend('PagerDefault')
       ->limit($pager)
       ->orderBy('send_date', 'DESC')
       ->execute();
-
     while ($row = $result->fetchAssoc()) {
-        $row['send_date'] = date('Y-m-d', $row['send_date']);
-        $row['operations'] = l('view', 'admin/content/formsent/' . $row['fid'] . '/view') . ' | ' .
-          l('delete', 'admin/content/formsent/' . $row['fid'] . '/delete');
-        $rows[] = $row;
-      }
-      return $rows;
-  }
-
-  public static function  readLastMonth(){
-
-    $currentDate = time();
-    $fechaMenosTreinta = $currentDate-2629743;
-    $field = array('fid', 'identifier', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'body');
-
-    $query = db_select('indra_form_sent', 's')
-      ->fields('s', $field)
-      ->condition('send_date', [$fechaMenosTreinta, $currentDate], 'BETWEEN');
-    $rows['all'] = t('All');
-    foreach ($query->execute()->fetchAll() as $v){
-      $rows[$v->send_date] = $v->send_date;
+      $row['send_date'] = date('Y-m-d', $row['send_date']);
+      $row['operations'] = l('view', 'admin/content/formsent/' . $row['fid'] . '/view') . ' | ' .
+        l('delete', 'admin/content/formsent/' . $row['fid'] . '/delete');
+      $rows[] = $row;
     }
-      return $rows;
-
+    return $rows;
   }
 
+  public static function deleteItem($fid) {
+    //Fechas en estilo UNIX
+  $unix_hoy = time(); //UNIX de hoy
+  // 1 mes: 2629743 / 2 meses: 5259486 / 3 meses: 7889229
+  $unix_past = $unix_hoy-2629743; //UNIX de hace un mes
+    $num_deleted = db_delete('indra_form_sent')
+      ->condition('fid', $fid)
+      ->execute();
+    return $num_deleted;
+  }
+
+  public static function deleteAllItems(){
+
+  //Fechas en estilo UNIX
+  $unix_hoy = time(); //UNIX de hoy
+
+  // 1 mes: 2629743 / 2 meses: 5259486 / 3 meses: 7889229 / 6 meses: 15778458 
+  $unix_past = $unix_hoy-15778458; //UNIX de hace 6 meses
+    
+    db_delete('indra_form_sent')
+    ->condition('send_date', $unix_past, '<')
+    ->execute();
+
+  }
 
   public static function readAllIdentifier() {
     $query = db_select('indra_form_sent', 's')
-        ->distinct()
-        ->fields('s', array('identifier'));
+      ->distinct()
+      ->fields('s', array('identifier'));
     $rows['all'] = t('All');
     foreach ($query->execute()->fetchAll() as $v) {
       $rows[$v->identifier] = $v->identifier;
@@ -113,8 +95,8 @@ class IndraFormSent {
 
   public static function readAllSubject() {
     $query = db_select('indra_form_sent', 's')
-        ->distinct()
-        ->fields('s', array('subject'));
+      ->distinct()
+      ->fields('s', array('subject'));
     $rows['all'] = t('All');
     foreach ($query->execute()->fetchAll() as $v) {
       $rows[$v->subject] = $v->subject;
@@ -122,35 +104,20 @@ class IndraFormSent {
     return $rows;
   }
 
-  /*
-  public static function readAllMailto() {
-    $query = db_select('indra_form_sent', 's')
-      ->distinct()
-      ->fields('s', array('mailto'));
-    $query->condition('identifier', 'indra_social_indra_social_share_this_form', '<>');
-    $rows['all'] = t('All');
-    foreach ($query->execute()->fetchAll() as $v) {
-      $rows[$v->mailto] = $v->mailto;
-    }
-    return $rows;
-  }
-  */
-
-
   public function create(IndraFormSent $forsent) {
     $nid = db_insert('indra_form_sent')
-        ->fields(array(
-          'identifier' => (string) $forsent->identifier,
-          'user' => (string) $forsent->user,
-          'language' => (string) $forsent->language,
-          'mailto' => (string) $forsent->mailto,
-          'replyto' => (string) $forsent->replyto,
-          'send_date' => (int) $forsent->send_date,
-          'ip_address' => (string) $forsent->ip_address,
-          'subject' => (string) $forsent->subject,
-          'body' => (string) $forsent->body,
-        ))
-        ->execute();
+      ->fields(array(
+        'identifier' => (string) $forsent->identifier,
+        'user' => (string) $forsent->user,
+        'language' => (string) $forsent->language,
+        'mailto' => (string) $forsent->mailto,
+        'replyto' => (string) $forsent->replyto,
+        'send_date' => (int) $forsent->send_date,
+        'ip_address' => (string) $forsent->ip_address,
+        'subject' => (string) $forsent->subject,
+        'body' => (string) $forsent->body,
+      ))
+      ->execute();
   }
 
 // seter
@@ -190,5 +157,5 @@ class IndraFormSent {
   public function setBody($body) {
     $this->body = substr($body, 0, 5000);
   }
-
+  
 }

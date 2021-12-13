@@ -4,4 +4,5 @@
     <div><strong><?php print t('Reply') . ': '; ?></strong><?php print $replyto; ?></div>
     <div><strong><?php print t('Body') . ': '; ?></strong></div>
     <div><?php print $body; ?></div>
+    <div><a href="http://indracompany.localhost/en/admin/content/formsent"><button>Go back</button></a></div>
 </div>
