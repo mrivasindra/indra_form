@@ -1,0 +1,132 @@
+<?php
+
+/**
+ * Implementa hook_init().
+ */
+function indra_form_sent_init() {
+  $path = drupal_get_path('module', 'indra_form_sent');
+  spl_autoload_register(function ($class) use($path) {
+    $file = $path . '/class/' . $class . '.php';
+    if (file_exists($file)) {
+      require_once $file;
+    }
+  });
+}
+
+/**
+ * Implementa hook_menu().
+ */
+function indra_form_sent_menu() {
+  $items['admin/content/formsent'] = array(
+    'title' => 'Form sent',
+    'page callback' => 'indra_form_sent_manage',
+    'access arguments' => array('administer nodes'),
+    'file' => 'include/indra_form_sent.admin.inc',
+  );
+  $items['admin/content/formsent/%/view'] = array(
+    'title' => 'Email sent',
+    'page callback' => 'indra_form_sent_item_view',
+    'page arguments' => array(3),
+    'access arguments' => array('administer nodes'),
+    'file' => 'include/indra_form_sent.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/content/formsent/%/delete'] = array(
+    'title' => 'Delete Record',
+    'page callback' => 'indra_form_sent_item_delete',
+    'page arguments' => array(3),
+    'access arguments' => array('administer nodes'),
+    'file' => 'include/indra_form_sent.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/content/formsent/table/ajax'] = array(
+    'page callback' => 'indra_form_sent_manage_ajax',
+    'access arguments' => array('administer nodes'),
+    'file' => 'include/indra_form_sent.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/config/system/form-sent'] = array(
+    'title' => 'Form sent',
+    'description' => t('Registration of forms submission.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('indra_form_sent_configuration'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'include/indra_form_sent.admin.inc',
+  );
+  $items['mail-csv'] = array(
+    'page callback' => 'indra_form_sent_email',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'include/indra_form_sent.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implementa hook_theme()
+ */
+function indra_form_sent_theme() {
+  $module_path = drupal_get_path('module', 'indra_form_sent');
+  $themes = array(
+    'indra_form_sent_mail' => array(
+      'template' => 'indra-form-sent-mail',
+      'variables' => array('data' => NULL),
+      'path' => $module_path . '/tpl',
+    ),
+  );
+  return $themes;
+}
+
+/**
+ * Implementa hook_mail()
+ */
+function indra_form_sent_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'mail_csv':
+      $message['subject'] = $params['subject'];
+      $message['body'][] = $params['body'];
+      break;
+  }
+}
+
+/**
+ * Implementa hook_form_alter();
+ */
+function indra_form_sent_form_alter(&$form, &$form_state) {
+  if (!in_array($form['#form_id'], preg_split('/\r\n|\r|\n/', variable_get('indra_form_sent_id', '')))) {
+    return;
+  }
+  global $language;
+  $form_temp = array();
+  $nid_value = isset($form['nid_policy']['#value']) ? $form['nid_policy']['#value'] : variable_get('indra_form_sent_data_policy', '');
+  $privacity = module_exists('translation') ? translation_path_get_translations('node/' . $nid_value, '') : '/node/' . $nid_value;
+  $insert = true;
+  foreach ($form as $k => $value) {
+    if ($insert && is_array($value) && isset($value['#type']) && ('submit' == $value['#type'] || 'actions' == $value['#type'])) {
+      $tlanguage = isset($privacity[$language->language]) ? drupal_get_path_alias($privacity[$language->language], $language->language)  : $privacity;
+      $description = t(variable_get('indra_form_sent_first_layer', '')) . ' ' . t('<a href="@url" class="privacity-link" target="_blank">Click here</a> for more information.',['@url'=> url($tlanguage)]);
+      $form_temp['accept_policy'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('I ACCEPT the processing of my personal data.'),
+        '#required' => TRUE,
+      );
+      if (!isset($form['no_policy_more']['#value'])) {
+        $form_temp['accept_policy_more'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('I AGREE to transfer my data to Indra group companies.'),
+          '#required' => TRUE,
+          '#description' => $description,
+        );
+      }
+      else {
+        $form_temp['accept_policy']['#description'] = $description;
+      }
+      $form_temp[$k] = $value;
+      $insert = false;
+    }
+    else {
+      $form_temp[$k] = $value;
+    }
+  }
+  $form = $form_temp;
+}
