@@ -30,7 +30,7 @@ function indra_form_sent_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('indra_form_sent_delete_all'),
     'file' => 'include/indra_form_sent.admin.inc',
-    'access arguments' => array('admin'),  
+    'access arguments' => array('administer my module'),  
     //'access arguments' => array('administer site configuration'),
     );
   $items['admin/content/formsent/%/view'] = array(
@@ -165,3 +165,5 @@ function indra_form_sent_permission(){
   ); 
 
 }
+
+//aa
