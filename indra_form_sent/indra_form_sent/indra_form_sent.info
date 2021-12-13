@@ -1,0 +1,14 @@
+name = Formularios enviados
+description = 'Gestiona información relativa a los formularios enviados.'
+package = "Indra"
+core = 7.x
+version = "7.x-1.0-dev"
+core = "7.x"
+dependencies[] = mimemail
+dependencies[] = date_popup
+files[] = indra_form_sent.module
+files[] = class/IndraFormSent.php
+files[] = class/IndraMailSystem.php
+files[] = include/indra_form_sent.admin.inc
+scripts[] = js/indra_form_sent.js
+stylesheets[all][] = indra_form_sent.css
