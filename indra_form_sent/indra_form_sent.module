@@ -150,3 +150,18 @@ function indra_form_sent_cron() {
   IndraFormSent::deleteAllItems();
 
 }
+
+/*
+* Implementa el hook_permissions()
+*/
+
+function indra_form_sent_permission(){
+
+  return array(
+    'administer my module' => array(
+      'title' => t('Administer my module'),
+      'description' => t('Perform administration tasks for my module.'),
+    ),
+  ); 
+
+}
