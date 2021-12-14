@@ -58,10 +58,6 @@ class IndraFormSent {
   }
 
   public static function deleteItem($fid) {
-    //Fechas en estilo UNIX
-  $unix_hoy = time(); //UNIX de hoy
-  // 1 mes: 2629743 / 2 meses: 5259486 / 3 meses: 7889229
-  $unix_past = $unix_hoy-2629743; //UNIX de hace un mes
     $num_deleted = db_delete('indra_form_sent')
       ->condition('fid', $fid)
       ->execute();

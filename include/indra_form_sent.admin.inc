@@ -374,12 +374,6 @@ function indra_form_sent_email()
   return $info;
 }
 
-/**
- * Cargar el formulario para barrar item desde la uri "admin/content/formsent/%/delete"
- * @param int $fid
- * @return array renderizable
- */
-
 function indra_form_sent_delete_all(){
   return drupal_get_form('indra_form_sent_delete_all_form');
 }
@@ -409,9 +403,17 @@ function indra_form_sent_delete_all_form($form, &$form_state) {
   return $form;
 }
 
+/*
+* Redireccion al formulario en el caso de cancelar
+*/
+
 function indra_custom_form_cancel($form, &$form_state) {
   drupal_goto('admin/content/formsent');
 }
+
+/*
+* Borrado de todos los registros antiguos y redirección al formulario
+*/
 
 function indra_form_sent_delete(){
 
