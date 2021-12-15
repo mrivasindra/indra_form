@@ -83,6 +83,84 @@ function indra_form_sent_schema() {
       'ip_address' => array('ip_address'),
     ),
   );
+
+  $schema['indra_form_sent_backup'] = array(
+    'description' => 'Almacena información relativa al envio de formularios.',
+    'fields' => array(
+      'fid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'identifier' => array(
+        'description' => 'Identificador textual del formulario.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'subject' => array(
+        'description' => 'Título del mensaje.',
+        'type' => 'varchar',
+        'length' => 256,
+        'not null' => TRUE,
+      ),
+      'user' => array(
+        'description' => 'Usuario que envía el formulario',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'language' => array(
+        'description' => 'Idioma del usuario',
+        'type' => 'varchar',
+        'length' => 12,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'mailto' => array(
+        'description' => 'Correo destinatario.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'replyto' => array(
+        'description' => 'Correo de respuesta.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'send_date' => array(
+        'description' => 'Tiempo Unix en el que se envía el formulario.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'ip_address' => array(
+        'description' => 'IP desde donde se envía el formulario.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'body' => array(
+        'type' => 'text',
+        'medium' => 'big',
+        'not null' => TRUE,
+        'description' => 'Contenido del formulario',
+      ),
+    ),
+    'primary key' => array('fid'),
+    'indexes' => array(
+      'identifier' => array('identifier'),
+      'subject' => array('identifier'),
+      'mailto' => array('mailto'),
+      'replyto' => array('replyto'),
+      'ip_address' => array('ip_address'),
+    ),
+  );
+
   return $schema;
 }
 
@@ -92,11 +170,16 @@ function indra_form_sent_schema() {
 function indra_form_sent_uninstall() {
   // Limpia variable.
   variable_del('indra_form_sent');
+  variable_del('indra_form_sent_backup');
 }
 
+/*
+* Implements hook_update().
+*/
 function indra_form_sent_update_7001() {
   $mail_sys = variable_get('mail_system', array('default-system' => 'DefaultMailSystem'));
   $mail_sys['indra_form_sent'] = 'IndraMailSystem';
   variable_set('mail_system', $mail_sys);
+  db_create_table('indra_form_sent', $schema['indra_form_sent']);
+  db_create_table('indra_form_sent_backup', $schema['indra_form_sent_backup']);
 }
-

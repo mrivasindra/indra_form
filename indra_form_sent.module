@@ -169,3 +169,4 @@ function indra_form_sent_cron() {
   IndraFormSent::deleteAllItems();
 
 }
+

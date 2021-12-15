@@ -57,10 +57,67 @@ class IndraFormSent {
     return $rows;
   }
 
+  function indra_form_sent_backup(){
+
+    require_once 'include/database/instag_indracompany';
+    
+    try{
+    $conn = db_connect();
+    }catch(Exception $e){
+      watchdog('indra_form_sent','Error bdd');
+    }
+    
+  
+    if (!db_table_exists('indra_form_sent_backup')) {
+  
+      $schema['indra_form_sent_backup'] = array(
+        'description' => 'Tabla intermedia almacena datos antes de ser borrados',
+        'fields' => array(
+         'fid' => array(
+           'type' => 'serial',
+           'unsigned' => TRUE,
+           'not null' => TRUE,
+         ),
+         'identifier' => array(
+          'description' => 'Identificador textual del formulario.',
+          'type' => 'varchar',
+          'length' => 128,
+          'not null' => TRUE,
+         ),
+         'subject' => array(
+          'description' => 'Título del mensaje.',
+          'type' => 'varchar',
+          'length' => 256,
+          'not null' => TRUE,
+         ),
+        ),
+        'primary key' => array('fid'),
+        'indexes' => array(
+        'identifier' => array('identifier'),
+        'subject' => array('identifier'),
+      )
+    );
+    
+    $ret = array();
+    db_create_table($ret, 'indra_form_sent_backup', $schema['indra_form_sent_backup']);
+  
+    }
+  
+    watchdog('indra_form_sent', 'Hola desde watchdog');
+    
+  return $ret;
+  }
+  
+  function create_indra_form_sent_backup(){
+  
+    indra_form_sent_backup();
+  
+  }
+
   public static function readPagerIntermediate($pager = 10, array $filter = array()) {
     $rows = array();
     $field = array('fid', 'identifier', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'body');
-    $query = db_select('indra_form_sent', 'fs');
+    $query = db_select('indra_form_sent_backup', 'fs');
     $query->fields('fs', $field);
     if (isset($filter['identifier']) && 'all' != $filter['identifier']) {
       $query->condition('identifier', $filter['identifier'], '=');
