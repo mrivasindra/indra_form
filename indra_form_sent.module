@@ -1,7 +1,5 @@
 <?php
 
-// INDRA FORM SIN TABLA
-
 /**
  * Implementa hook_init().
  */
@@ -26,12 +24,11 @@ function indra_form_sent_menu() {
     'file' => 'include/indra_form_sent.admin.inc',
   );
   $items['admin/config/system/form-sent/filter'] = array(
-    'title' => t('Delete all records'),
+    'title' => t('Delete old records'),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('indra_form_sent_delete_all'),
+    'page arguments' => array('indra_form_sent_delete_all_form'),
     'file' => 'include/indra_form_sent.admin.inc',
-    'access arguments' => array('administer my module'),  
-    //'access arguments' => array('administer site configuration'),
+    'access arguments' => array('administer form_sent delete old records'),
     );
   $items['admin/content/formsent/%/view'] = array(
     'title' => 'Email sent',
@@ -69,8 +66,30 @@ function indra_form_sent_menu() {
     'file' => 'include/indra_form_sent.admin.inc',
     'type' => MENU_CALLBACK,
   );
+  $items['admin/config/system/form-sent/form_backup'] = array(
+    'title' => t('Intermediate table'),
+    'page callback' => 'indra_form_sent_intermediate',
+    'access arguments' => array('administer nodes'),
+    'file' => 'include/indra_form_sent.admin.inc',
+    );
   return $items;
 }
+
+
+/**
+ * Implementa el hook_permissions()
+ */
+function indra_form_sent_permission(){
+
+  return array(
+    'administer form_sent delete old records' => array(
+      'title' => t('Administer form_sent delete old records'),
+      'description' => t('Administer form_sent delete old records.'),
+    ),
+  );
+
+}
+
 
 /**
  * Implementa hook_theme()
@@ -148,20 +167,5 @@ function indra_form_sent_form_alter(&$form, &$form_state) {
 function indra_form_sent_cron() {
 
   IndraFormSent::deleteAllItems();
-
-}
-
-/*
-* Implementa el hook_permissions()
-*/
-
-function indra_form_sent_permission(){
-
-  return array(
-    'administer my module' => array(
-      'title' => t('Administer my module'),
-      'description' => t('Perform administration tasks for my module.'),
-    ),
-  ); 
 
 }

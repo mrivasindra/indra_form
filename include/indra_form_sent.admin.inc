@@ -374,19 +374,16 @@ function indra_form_sent_email()
   return $info;
 }
 
-function indra_form_sent_delete_all(){
-  return drupal_get_form('indra_form_sent_delete_all_form');
-}
 
-/*
-* Formulario para borrar todos los elementos
-*/
+/**
+ * Formulario para borrar todos los elementos
+ */
 function indra_form_sent_delete_all_form($form, &$form_state) {
 
   $form['information'] = array(
-    '#markup' => t('Are you sure you want to delete all? </br>'),
+    '#markup' => '<p>' . t('Are you sure you want to delete old records?') . '</p>',
   );
- 
+
   $form['delete'] = array(
     '#type' => 'submit',
     '#value' => t('Delete'),
@@ -403,17 +400,9 @@ function indra_form_sent_delete_all_form($form, &$form_state) {
   return $form;
 }
 
-/*
-* Redireccion al formulario en el caso de cancelar
-*/
-
 function indra_custom_form_cancel($form, &$form_state) {
   drupal_goto('admin/content/formsent');
 }
-
-/*
-* Borrado de todos los registros antiguos y redirección al formulario
-*/
 
 function indra_form_sent_delete(){
 
@@ -421,4 +410,35 @@ function indra_form_sent_delete(){
 
   drupal_goto('admin/content/formsent');
 
+}
+
+function indra_form_sent_intermediate() {
+  $table = indra_form_sent_manage_table_intermediate(INDRA_FORM_SENT_PAGER);
+  $filter = drupal_get_form('indra_form_sent_filter_form');
+  $filter = drupal_render($filter);
+  return $filter . '<div id="form-sent-ui">' . theme_table($table) . theme('pager') . '</div>';
+}
+
+/**
+ * Provee el array para construir la tabla de gestión.
+ * @param type $pager
+ * @param type $filter
+ * @return array  renderizable para tabla.
+ */
+function indra_form_sent_manage_table_intermediate($pager = 10, $filter = array()) {
+  $data = IndraFormSent::readPagerIntermediate($pager, $filter);
+  foreach ($data as $key => $value) {
+    unset($data[$key]['body']);
+  }
+
+  $table = array(
+    'header' => array('fid', 'identifier', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'operation'),
+    'rows' => $data,
+    'attributes' => array('id' => 'form-sent-table'),
+    'caption' => '',
+    'colgroups' => array(),
+    'sticky' => '',
+    'empty' => '',
+  );
+  return $table;
 }

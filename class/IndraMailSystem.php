@@ -11,7 +11,7 @@ class IndraMailSystem extends MimeMailSystem {
    * Concatena y ajusta el cuerpo para email HTML
    *
    * @param array $message
-   *   Un array tal como se describre en  hook_mail_alter() con parametros
+   *   Un array tal como se describre en  hook_mail_alter() con parametros 
    *   opcionales descritos en mimemail_prepare_message().
    *
    * @return array
@@ -27,7 +27,7 @@ class IndraMailSystem extends MimeMailSystem {
    * Si el envío teien exito ser registra en BBDD
    *
    * @param array $message
-   *   Un array tal como se describre en  hook_mail_alter() con parametros
+   *   Un array tal como se describre en  hook_mail_alter() con parametros 
    *   opcionales descritos en mimemail_prepare_message().
    *
    * @return boolean

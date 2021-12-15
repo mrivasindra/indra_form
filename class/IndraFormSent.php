@@ -57,7 +57,47 @@ class IndraFormSent {
     return $rows;
   }
 
+  public static function readPagerIntermediate($pager = 10, array $filter = array()) {
+    $rows = array();
+    $field = array('fid', 'identifier', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'body');
+    $query = db_select('indra_form_sent', 'fs');
+    $query->fields('fs', $field);
+    if (isset($filter['identifier']) && 'all' != $filter['identifier']) {
+      $query->condition('identifier', $filter['identifier'], '=');
+    }
+    if (isset($filter['subject']) && 'all' != $filter['subject']) {
+      $query->condition('subject', $filter['subject'], '=');
+    }
+    if (isset($filter['mailto']) && 'all' != $filter['mailto']) {
+      $query->condition('mailto', '%' . db_like($filter['mailto']) . '%', 'LIKE');
+    }
+    if (isset($filter['replyto']) && !empty($filter['replyto'])) {
+      $query->condition('replyto', '%' . db_like($filter['replyto']) . '%', 'LIKE');
+    }
+    if (isset($filter['date_from']) && null !== $filter['date_from']) {
+      $query->condition('send_date', $filter['date_from'], '>=');
+    }
+    if (isset($filter['date_to']) && null !== $filter['date_to']) {
+      $query->condition('send_date', $filter['date_to'], '<=');
+    }
+    $result = $query
+      ->extend('PagerDefault')
+      ->limit($pager)
+      ->orderBy('send_date', 'DESC')
+      ->execute();
+    while ($row = $result->fetchAssoc()) {
+      $row['send_date'] = date('Y-m-d', $row['send_date']);
+      $row['operations'] = l('view', 'admin/content/formsent/' . $row['fid'] . '/view');
+      $rows[] = $row;
+    }
+    return $rows;
+  }
+
   public static function deleteItem($fid) {
+    //Fechas en estilo UNIX
+  $unix_hoy = time(); //UNIX de hoy
+  // 1 mes: 2629743 / 2 meses: 5259486 / 3 meses: 7889229
+  $unix_past = $unix_hoy-2629743; //UNIX de hace un mes
     $num_deleted = db_delete('indra_form_sent')
       ->condition('fid', $fid)
       ->execute();
@@ -66,12 +106,12 @@ class IndraFormSent {
 
   public static function deleteAllItems(){
 
-  //Fechas en estilo UNIX
-  $unix_hoy = time(); //UNIX de hoy
+    //Fechas en estilo UNIX
+    $unix_hoy = time(); //UNIX de hoy
 
-  // 1 mes: 2629743 / 2 meses: 5259486 / 3 meses: 7889229 / 6 meses: 15778458 
-  $unix_past = $unix_hoy-15778458; //UNIX de hace 6 meses
-    
+    // 1 mes: 2629743 / 2 meses: 5259486 / 3 meses: 7889229 / 6 meses: 15778458
+    $unix_past = $unix_hoy - 15778458; //UNIX de hace 6 meses
+
     db_delete('indra_form_sent')
     ->condition('send_date', $unix_past, '<')
     ->execute();
@@ -153,5 +193,5 @@ class IndraFormSent {
   public function setBody($body) {
     $this->body = substr($body, 0, 5000);
   }
-  
+
 }
