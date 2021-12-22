@@ -178,6 +178,11 @@ function indra_form_sent_item_view($fid) {
   return theme('indra_form_sent_mail', $data);
 }
 
+function indra_form_sent_item_view_intermediate($fid) {
+  $data = IndraFormSent::readItemIntermediate($fid);
+  return theme('indra_form_sent_mail', $data);
+}
+
 /**
  * Retrollamada para borrar item
  */
@@ -283,8 +288,68 @@ function indra_form_sent_configuration() {
     '#size' => 80,
     '#maxlength' => 128,
   );
+  $form['temporary_delete'] = array(
+    '#type' => 'select',
+    '#title' => t('Temporary delete, older than'),
+    '#default_value' => variable_get('temporary_delete',''),
+    '#options' => array(
+      '0' => 'No Delete',
+      '6' => '6 months'
+    )
+  );
+
+  $form['final_delete'] = array(
+    '#type' => 'select',
+    '#title' => t('Final delete, older than'),
+    '#default_value' => variable_get('final_delete', ''),
+    '#options' => array(
+      '0' => 'No Delete',
+      '12' => '12 months',
+      '18' => '18 months',
+      '24' => '24 months'
+    )
+  );
+
+  indra_form_temporal();
+  indra_form_delete();
 
   return system_settings_form($form);
+}
+
+function indra_form_temporal(){
+
+  $obtener_fecha_temporal = variable_get('temporary_delete');
+  switch($obtener_fecha_temporal){
+
+    case '0': break;
+
+    case '6': IndraFormSent::insertItems();
+              IndraFormSent::deleteAllItems();
+              break;
+
+    default: watchdog('indra_form_sent', 'Error, no hay datos.');
+  }
+
+}
+
+function indra_form_delete(){
+
+  $obtener_fecha_definitiva = variable_get('final_delete');
+  switch($obtener_fecha_definitiva){
+
+    case '0': break;
+
+    case '12': IndraFormSent::deleteSelected(31556926);
+      break;
+
+    case '18': IndraFormSent::deleteSelected(47335374);
+      break;
+
+    case '24': IndraFormSent::deleteSelected(63113852);
+      break;
+
+  }
+
 }
 
 /**
@@ -406,6 +471,7 @@ function indra_custom_form_cancel($form, &$form_state) {
 
 function indra_form_sent_delete(){
 
+  IndraFormSent::insertItems();
   IndraFormSent::deleteAllItems();
 
   drupal_goto('admin/content/formsent');
@@ -414,9 +480,7 @@ function indra_form_sent_delete(){
 
 function indra_form_sent_intermediate() {
   $table = indra_form_sent_manage_table_intermediate(INDRA_FORM_SENT_PAGER);
-  $filter = drupal_get_form('indra_form_sent_filter_form');
-  $filter = drupal_render($filter);
-  return $filter . '<div id="form-sent-ui">' . theme_table($table) . theme('pager') . '</div>';
+  return '<div id="form-sent-ui">' . theme_table($table) . theme('pager') . '</div>';
 }
 
 /**
@@ -426,13 +490,18 @@ function indra_form_sent_intermediate() {
  * @return array  renderizable para tabla.
  */
 function indra_form_sent_manage_table_intermediate($pager = 10, $filter = array()) {
+  
+  
   $data = IndraFormSent::readPagerIntermediate($pager, $filter);
+  //if(!empty($data)){
   foreach ($data as $key => $value) {
     unset($data[$key]['body']);
   }
-
+  //}else{
+  //echo "<h3>No data found</h3>";
+  //}
   $table = array(
-    'header' => array('fid', 'identifier', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'operation'),
+    'header' => array('fid', 'identifie', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'operation'),
     'rows' => $data,
     'attributes' => array('id' => 'form-sent-table'),
     'caption' => '',

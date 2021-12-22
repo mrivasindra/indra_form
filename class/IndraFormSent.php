@@ -14,11 +14,115 @@ class IndraFormSent {
   private $body;
 
   public static function readItem($fid) {
+
     $query = db_select('indra_form_sent', 's')
         ->fields('s')
         ->condition('s.fid', $fid, '=');
     return $query->execute()->fetchAssoc();
+
+}
+
+public static function readItemIntermediate($fid){
+
+  $query = db_select('indra_form_sent_backup3', 's')
+        ->fields('s')
+        ->condition('s.fid', $fid, '=');
+    return $query->execute()->fetchAssoc();
+  
+}
+
+public static function create_table_backup(){
+
+  try{
+    if (!db_table_exists('indra_form_sent_backup2')){
+    db_create_table('indra_form_sent_backup2', array(
+      'description' => 'Tabla intermedia almacena datos antes de ser borrados',
+      'fields' => array(
+       'fid' => array(
+         'type' => 'serial',
+         'unsigned' => TRUE,
+         'not null' => TRUE,
+       ),
+       'identifier' => array(
+        'description' => 'Identificador textual del formulario.4',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+       ),
+       'subject' => array(
+        'description' => 'Título del mensaje.',
+        'type' => 'varchar',
+        'length' => 256,
+        'not null' => TRUE,
+       ),
+       'subject' => array(
+        'description' => 'Título del mensaje.',
+        'type' => 'varchar',
+        'length' => 256,
+        'not null' => TRUE,
+      ),
+      'user' => array(
+        'description' => 'Usuario que envía el formulario',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'language' => array(
+        'description' => 'Idioma del usuario',
+        'type' => 'varchar',
+        'length' => 12,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'mailto' => array(
+        'description' => 'Correo destinatario.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'replyto' => array(
+        'description' => 'Correo de respuesta.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'send_date' => array(
+        'description' => 'Tiempo Unix en el que se envía el formulario.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'ip_address' => array(
+        'description' => 'IP desde donde se envía el formulario.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'body' => array(
+        'type' => 'text',
+        'medium' => 'big',
+        'not null' => TRUE,
+        'description' => 'Contenido del formulario',
+      ),
+    ),
+      'primary key' => array('fid'),
+      'indexes' => array(
+        'identifier' => array('identifier'),
+        'subject' => array('identifier'),
+        'mailto' => array('mailto'),
+        'replyto' => array('replyto'),
+        'ip_address' => array('ip_address'),
+    ))
+  );
   }
+  }catch(Exception $e){
+    watchdog('indra_form_sent, "Error al crear la base de datos: ' . $e);
+}
+
+}
 
   public static function readPager($pager = 10, array $filter = array()) {
     $rows = array();
@@ -57,67 +161,11 @@ class IndraFormSent {
     return $rows;
   }
 
-  function indra_form_sent_backup(){
-
-    require_once 'include/database/instag_indracompany';
-    
-    try{
-    $conn = db_connect();
-    }catch(Exception $e){
-      watchdog('indra_form_sent','Error bdd');
-    }
-    
-  
-    if (!db_table_exists('indra_form_sent_backup')) {
-  
-      $schema['indra_form_sent_backup'] = array(
-        'description' => 'Tabla intermedia almacena datos antes de ser borrados',
-        'fields' => array(
-         'fid' => array(
-           'type' => 'serial',
-           'unsigned' => TRUE,
-           'not null' => TRUE,
-         ),
-         'identifier' => array(
-          'description' => 'Identificador textual del formulario.',
-          'type' => 'varchar',
-          'length' => 128,
-          'not null' => TRUE,
-         ),
-         'subject' => array(
-          'description' => 'Título del mensaje.',
-          'type' => 'varchar',
-          'length' => 256,
-          'not null' => TRUE,
-         ),
-        ),
-        'primary key' => array('fid'),
-        'indexes' => array(
-        'identifier' => array('identifier'),
-        'subject' => array('identifier'),
-      )
-    );
-    
-    $ret = array();
-    db_create_table($ret, 'indra_form_sent_backup', $schema['indra_form_sent_backup']);
-  
-    }
-  
-    watchdog('indra_form_sent', 'Hola desde watchdog');
-    
-  return $ret;
-  }
-  
-  function create_indra_form_sent_backup(){
-  
-    indra_form_sent_backup();
-  
-  }
-
   public static function readPagerIntermediate($pager = 10, array $filter = array()) {
+
     $rows = array();
     $field = array('fid', 'identifier', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'body');
-    $query = db_select('indra_form_sent_backup', 'fs');
+    $query = db_select('indra_form_sent_backup3', 'fs');
     $query->fields('fs', $field);
     if (isset($filter['identifier']) && 'all' != $filter['identifier']) {
       $query->condition('identifier', $filter['identifier'], '=');
@@ -140,13 +188,15 @@ class IndraFormSent {
     $result = $query
       ->extend('PagerDefault')
       ->limit($pager)
-      ->orderBy('send_date', 'DESC')
+      ->orderBy('fid', 'DESC')
       ->execute();
     while ($row = $result->fetchAssoc()) {
       $row['send_date'] = date('Y-m-d', $row['send_date']);
-      $row['operations'] = l('view', 'admin/content/formsent/' . $row['fid'] . '/view');
+      $row['operations'] = l('view', 'admin/config/system/form-sent/form_backup/' . $row['fid'] . '/view');
       $rows[] = $row;
     }
+
+
     return $rows;
   }
 
@@ -159,6 +209,18 @@ class IndraFormSent {
       ->condition('fid', $fid)
       ->execute();
     return $num_deleted;
+  }
+
+  public static function insertItems(){
+
+    $query = db_select('indra_form_sent', 'tp')
+      ->fields('tp', array('fid', 'identifier', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'body'));
+
+    db_insert('indra_form_sent_backup3')
+      ->fields(array('fid', 'identifier', 'subject', 'user', 'language', 'mailto', 'replyto', 'send_date', 'ip_address', 'body'))
+      ->from($query)
+      ->execute();
+
   }
 
   public static function deleteAllItems(){
@@ -196,6 +258,22 @@ class IndraFormSent {
     }
     return $rows;
   }
+
+  public static function deleteSelected($time){
+
+    try{
+      $unix_hoy = time(); //UNIX de hoy
+      $unix_past = $unix_hoy - $time;
+
+          db_delete('indra_form_sent_backup3')
+          ->condition('send_date', $unix_past, '<')
+          ->execute();
+
+      }catch(Exception $e){
+        watchdog("indra_form_sent","Error en la Base de datos.
+        Al intentar borrar. <br>$e");
+      }
+    }
 
   public function create(IndraFormSent $forsent) {
     $nid = db_insert('indra_form_sent')

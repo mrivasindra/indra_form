@@ -72,6 +72,15 @@ function indra_form_sent_menu() {
     'access arguments' => array('administer nodes'),
     'file' => 'include/indra_form_sent.admin.inc',
     );
+
+    $items['admin/config/system/form-sent/form_backup/%/view'] = array(
+      'title' => 'Email sent2',
+      'page callback' => 'indra_form_sent_item_view_intermediate',
+      'page arguments' => array(6),
+      'access arguments' => array('administer form_sent delete old records'),
+      'file' => 'include/indra_form_sent.admin.inc',
+      'type' => MENU_CALLBACK,
+    );
   return $items;
 }
 
