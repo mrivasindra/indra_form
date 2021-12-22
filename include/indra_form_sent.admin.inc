@@ -309,10 +309,6 @@ function indra_form_sent_configuration() {
       '24' => '24 months'
     )
   );
-
-  indra_form_temporal();
-  indra_form_delete();
-
   return system_settings_form($form);
 }
 
@@ -462,6 +458,10 @@ function indra_form_sent_delete_all_form($form, &$form_state) {
   );
 
   $form['#redirect'] = 'admin/content/formsent';
+
+  indra_form_temporal();
+  indra_form_delete();
+
   return $form;
 }
 

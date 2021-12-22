@@ -175,7 +175,12 @@ function indra_form_sent_form_alter(&$form, &$form_state) {
 
 function indra_form_sent_cron() {
 
-  IndraFormSent::deleteAllItems();
+  /* IndraFormSent::insertItems();
+  IndraFormSent::deleteAllItems(); */
+
+  include 'include/indra_form_sent.admin.inc';
+  indra_form_temporal();
+  indra_form_delete();
 
 }
 
